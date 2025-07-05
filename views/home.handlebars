@@ -1,0 +1,13 @@
+<h1>Welcome to the Terrible App!</h1>
+<p>This application is intentionally vulnerable. Explore at your own risk!</p>
+
+<h2>Our Products</h2>
+{{#each products}}
+<div class="product-card">
+    <h3><a href="/product/{{id}}">{{name}}</a></h3>
+    <p>Description: {{{raw description}}}</p> // XSS vulnerability here (raw helper)
+    <p>Price: ${{price}}</p>
+</div>
+{{else}}
+<p>No products found.</p>
+{{/each}}

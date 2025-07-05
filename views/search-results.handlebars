@@ -1,0 +1,17 @@
+
+<h1>Search Results for "{{searchTerm}}"</h1>
+<p>Reflected Search Term (Vulnerable to XSS): {{{reflectedSearchTerm}}}</p> // Reflected XSS here
+
+{{#if products}}
+    {{#each products}}
+    <div class="product-card">
+        <h3><a href="/product/{{id}}">{{name}}</a></h3>
+        <p>Description: {{{raw description}}}</p> // XSS vulnerability here (raw helper)
+        <p>Price: ${{price}}</p>
+        <p>Internal Cost: ${{internal_cost}}</p> // Sensitive Data Exposure
+    </div>
+    {{/each}}
+{{else}}
+<p>No products found matching your search.</p>
+{{/if}}
+<p><a href="/search">Back to Search</a></p>

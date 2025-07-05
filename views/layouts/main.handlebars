@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Terrible App</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f0f0; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; }
+        h1, h2 { color: #d32f2f; }
+        pre { background-color: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .product-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .product-card h3 { margin-top: 0; }
+        input[type="text"], input[type="number"], textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #d32f2f; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #b71c1c; }
+        .nav-links a { margin-right: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/search">Search Products</a>
+            <a href="/add-product">Add New Product</a>
+            <a href="/debug/exec?cmd=echo%20hello">Debug Exec</a>
+            <a href="/debug/fetch?url=http://example.com">Debug Fetch</a>
+        </div>
+        {{{body}}}
+    </div>
+</body>
+</html>
+
+
