@@ -1,0 +1,93 @@
+name: Security Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: vulncicdtest
+  IMAGE_TAG: latest
+  DOCKERHUB_REPO: yourusername/vulncicdtest
+  RUNURL: http://localhost:3000
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t $IMAGE_NAME:$IMAGE_TAG .
+      - run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - run: |
+          docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_REPO:$IMAGE_TAG
+          docker push $DOCKERHUB_REPO:$IMAGE_TAG
+
+  retirejs:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    container: node:22-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          npm install
+          npm install -g retire
+          retire --outputformat json --outputpath retirejs_results.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retirejs-report
+          path: retirejs_results.json
+
+  snyk:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    container: snyk/snyk:node-22
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          npm install
+          snyk monitor --all-projects
+
+  trivy-config:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v $PWD:/myapp aquasec/trivy config --format json /myapp > trivy_config.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trivy-config-report
+          path: trivy_config.json
+
+  trivy-image:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - run: docker pull $DOCKERHUB_REPO:$IMAGE_TAG
+      - run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --format json $DOCKERHUB_REPO:$IMAGE_TAG > trivy_image.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy_image.json
+
+  zap:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - run: docker run --name vulnapp -d -p 3000:3000 $DOCKERHUB_REPO:$IMAGE_TAG
+      - run: sleep 5
+      - run: |
+          docker run --rm -v $PWD:/zap/wrk/:rw -u 0:0 ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t $RUNURL -I -g /zap/wrk/gen.conf -r /zap/wrk/zap.html || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap.html
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: zap
+    steps:
+      - run: docker stop vulnapp || true
+      - run: docker rm vulnapp || true
