@@ -10,7 +10,28 @@ jobs:
           name: "Say hello"
           command: "echo Hello, World!"
 
+  build-and-push:
+    machine: true
+    environment:
+      IMAGE_NAME: vulncicdtest
+      IMAGE_TAG: latest
+    steps:
+      - checkout
+      - run:
+          name: Docker login
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
+          name: Build Docker image
+          command: docker build -t $IMAGE_NAME:$IMAGE_TAG .
+      - run:
+          name: Tag image for Docker Hub
+          command: docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+      - run:
+          name: Push image to Docker Hub
+          command: docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+
 workflows:
   say-hello-workflow:
     jobs:
       - say-hello
+      - build-and-push
